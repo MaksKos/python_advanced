@@ -5,22 +5,18 @@ from parser_fun import parse_json as parjs
 
 
 class TestMessEval(TestCase):
+
     def setUp(self):
-        pass
+        self.str_fun = mock.Mock()
+        self.json = 'some_string'
 
     def test_none(self):
-        def fun():
-            pass
-        self.assertEqual(parjs('str', fun, None, ['word1']), 1)
-        self.assertEqual(parjs('str', fun, ['key1'], None), 1)
-        self.assertEqual(parjs('str', fun, None, None), 1)
+        self.assertEqual(parjs(None, self.str_fun), 'json is None')
+        self.assertEqual(parjs(self.json, None), 'callback is None')
 
-    def test_empty(self):
-        def fun():
-            pass
-        self.assertEqual(parjs('str', fun, [], ['word1']), 2)
-        self.assertEqual(parjs('str', fun, ['key1'], []), 2)
-        self.assertEqual(parjs('str', fun, [], []), 2)
+    def test_none_lists(self):
+        self.assertIsNone(parjs(self.json, self.str_fun, keywords=['word1']))
+        self.assertIsNone(parjs(self.json, self.str_fun, required_fields=['key1']))
 
     def test_function(self):
         json_string = json.dumps({'key1': 'word1 word2',
