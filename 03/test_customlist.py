@@ -39,49 +39,49 @@ class TestCustomList(TestCase):
     def test_add_custom(self):
         test1 = self.cust + CustomList(self.list1)
         self.assertTrue(isinstance(test1, CustomList))
-        self.assertEqual(test1, CustomList([1, 13, -2, 9]))
-        self.assertEqual(self.cust + CustomList(), self.cust)
+        self.assertEqual(list(test1), [1, 13, -2, 9])
+        self.assertEqual(list(self.cust + CustomList()), list(self.cust))
 
     def test_add_list(self):
         test1 = self.cust + self.list1  # len(cust) >
         test2 = self.cust + self.list2  # len(cust) <
         self.assertIsInstance(test1, CustomList)
-        self.assertEqual(test1, CustomList([1, 13, -2, 9]))
-        self.assertEqual(test2, CustomList([-4, 11, 4, 16, 3, 8]))
-        self.assertEqual(self.cust + [], self.cust)
-        self.assertEqual(self.cust + None, self.cust)
+        self.assertEqual(list(test1), [1, 13, -2, 9])
+        self.assertEqual(list(test2), [-4, 11, 4, 16, 3, 8])
+        self.assertEqual(list(self.cust + []), list(self.cust))
+        self.assertEqual(list(self.cust + None), list(self.cust))
 
     def test_radd(self):
         test1 = self.list1 + self.cust  # len(a) >
         test2 = self.list2 + self.cust  # len(a) <
         self.assertIsInstance(test1, CustomList)
-        self.assertEqual(test1, CustomList([1, 13, -2, 9]))
-        self.assertEqual(test2, CustomList([-4, 11, 4, 16, 3, 8]))
-        self.assertEqual(None + self.cust, self.cust)
+        self.assertEqual(list(test1), [1, 13, -2, 9])
+        self.assertEqual(list(test2), [-4, 11, 4, 16, 3, 8])
+        self.assertEqual(list(None + self.cust), list(self.cust))
 
     def test_sub_custom(self):
         test1 = self.cust - CustomList(self.list1)
         test2 = self.cust - CustomList(self.list2)
         self.assertIsInstance(test1, CustomList)
-        self.assertEqual(test1, CustomList([-9, -3, 16, 9]))
-        self.assertEqual(test2, CustomList([-4, -1, 10, 2, -3, -8]))
-        self.assertEqual(self.cust - CustomList(), self.cust)
-        self.assertEqual(CustomList() - self.cust, CustomList([4, -5, -7, -9]))
+        self.assertEqual(list(test1), [-9, -3, 16, 9])
+        self.assertEqual(list(test2), [-4, -1, 10, 2, -3, -8])
+        self.assertEqual(list(self.cust - CustomList()), list(self.cust))
+        self.assertEqual(list(CustomList() - self.cust), [4, -5, -7, -9])
 
     def test_sub_list(self):
         test1 = self.cust - self.list1
         test2 = self.cust - self.list2
         self.assertIsInstance(test1, CustomList)
-        self.assertEqual(test1, CustomList([-9, -3, 16, 9]))
-        self.assertEqual(test2, CustomList([-4, -1, 10, 2, -3, -8]))
-        self.assertEqual(self.cust - [], self.cust)
-        self.assertEqual(self.cust - None, self.cust)
+        self.assertEqual(list(test1), [-9, -3, 16, 9])
+        self.assertEqual(list(test2), [-4, -1, 10, 2, -3, -8])
+        self.assertEqual(list(self.cust - []), list(self.cust))
+        self.assertEqual(list(self.cust - None), list(self.cust))
 
     def test_rsub(self):
         test1 = self.list1 - self.cust
         test2 = self.list2 - self.cust
         self.assertIsInstance(test1, CustomList)
-        self.assertEqual(test1, CustomList([9, 3, -16, -9]))
-        self.assertEqual(test2, CustomList([4, 1, -10, -2, 3, 8]))
-        self.assertEqual([] - self.cust, CustomList([4, -5, -7, -9]))
-        self.assertEqual(None - self.cust, CustomList([4, -5, -7, -9]))
+        self.assertEqual(list(test1), [9, 3, -16, -9])
+        self.assertEqual(list(test2), [4, 1, -10, -2, 3, 8])
+        self.assertEqual(list([] - self.cust), [4, -5, -7, -9])
+        self.assertEqual(list(None - self.cust), [4, -5, -7, -9])
