@@ -1,37 +1,25 @@
 class CustomMeta(type):
-    pass
 
+    _prefix = 'custom_'
 
-class CustomClass(metaclass=CustomMeta):
-    x = 50
+    def __setattr__(self, name, val):
+        if hasattr(self, name):
+            super().__setattr__(name, val)
+            return
+        super().__setattr__(CustomMeta._prefix+name, val)
 
-    def __init__(self, val=99):
-        self.val = val
+    @staticmethod
+    def _custom_setattr(self, name, value):
+        if hasattr(self, name):
+            self.__dict__[name] = value
+            return
+        self.__dict__[CustomMeta._prefix+name] = value
 
-    def line(self):
-        return 100
-
-    def __str__(self):
-        return "Custom_by_metaclass"
-
-
-
-assert CustomClass.custom_x == 50
-CustomClass.x  # ошибка
-
-inst = CustomClass()
-assert inst.custom_x == 50
-assert inst.custom_val == 99
-assert inst.custom_line() == 100
-assert str(inst) == "Custom_by_metaclass"
-
-
-
-inst.x  # ошибка
-inst.val  # ошибка
-inst.line() # ошибка
-inst.yyy  # ошибка
-
-inst.dynamic = "added later"
-assert inst.custom_dynamic == "added later"
-inst.dynamic  # ошибка
+    def __new__(mcs, name, bases, classdict, **kwargs):
+        for key in classdict.copy().keys():
+            if key.startswith('__') and key.endswith('__'):
+                continue
+            classdict[mcs._prefix+key] = classdict.pop(key)
+        classdict['__setattr__'] = mcs._custom_setattr
+        cls = super().__new__(mcs, name, bases, classdict)
+        return cls
