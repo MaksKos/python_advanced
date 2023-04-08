@@ -23,9 +23,9 @@ class TestMessEval(TestCase):
                                   'key2': "word1 word 3",
                                   'key3': 'word4 word1 word5'})
         fields = ['key1', 'key3', 'key8']
-        keywords = ['word1', 'word4', 'word5']
-        call_list = [mock.call('word1'), mock.call('word4'),
-                     mock.call('word1'), mock.call('word5')]
+        keywords = ['word1', 'word4', 'word5', 'word10']  # дописать 'word10'
+        call_list = [mock.call('key1', 'word1'), mock.call('key3', 'word4'),
+                     mock.call('key3', 'word1'), mock.call('key3', 'word5')]
         with mock.patch('parser_fun.string_function') as mock_fun:
             parjs(json_string, mock_fun, fields, keywords)
             self.assertEqual(mock_fun.call_count, 4)

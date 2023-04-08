@@ -19,5 +19,5 @@ def parse_json(json_str: str, keyword_callback, required_fields=None, keywords=N
             continue
         for word in doc.split():
             if word in keywords:
-                keyword_callback(word)
+                keyword_callback(field, word)  # передавать field и word
     return None
