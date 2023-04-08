@@ -118,3 +118,9 @@ class TestAccountRuletka(TestCase):
         for i in range(10):
             self.assertEqual(player.balance, 900 - i*100)
         self.assertEqual(player.balance, 0)
+
+    def test_n_inst(self):
+        player1 = self.Player()
+        player2 = self.Player()
+        self.assertEqual(player1.balance, 900)
+        self.assertEqual(player2.balance, 800)
