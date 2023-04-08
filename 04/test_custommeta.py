@@ -1,3 +1,5 @@
+# pylint: disable=missing-docstring
+
 from unittest import TestCase
 from custommeta import CustomMeta
 

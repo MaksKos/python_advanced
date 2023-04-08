@@ -1,21 +1,23 @@
+# pylint: disable=missing-docstring
+
 class CustomMeta(type):
 
     _prefix = 'custom_'
 
-    def __setattr__(self, name, val):
-        if hasattr(self, name):
+    def __setattr__(cls, name, val):
+        if hasattr(cls, name):
             super().__setattr__(name, val)
             return
         super().__setattr__(CustomMeta._prefix+name, val)
 
     @staticmethod
-    def _custom_setattr(self, name, value):
-        if hasattr(self, name):
-            self.__dict__[name] = value
+    def _custom_setattr(obj, name, value):
+        if hasattr(obj, name):
+            obj.__dict__[name] = value
             return
-        self.__dict__[CustomMeta._prefix+name] = value
+        obj.__dict__[CustomMeta._prefix+name] = value
 
-    def __new__(mcs, name, bases, classdict, **kwargs):
+    def __new__(mcs, name, bases, classdict):
         for key in classdict.copy().keys():
             if key.startswith('__') and key.endswith('__'):
                 continue
