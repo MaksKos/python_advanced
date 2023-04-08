@@ -1,10 +1,10 @@
-from unittest import TestCase
+from unittest import TestCase, mock
 from io import StringIO
 
 from file_filter import file_filter
 
 
-class TestMessEval(TestCase):
+class TestMessEvalIO(TestCase):
 
     def setUp(self):
         self.file = StringIO()
@@ -53,3 +53,50 @@ class TestMessEval(TestCase):
 
     def tearDown(self):
         self.file.close()
+
+
+class TestMessEvalFile(TestCase):
+
+    def setUp(self):
+        self.file = 'data.txt'
+
+    def test_list(self):
+        with self.assertRaises(ValueError) as err:
+            gen = file_filter(self.file, [])
+            next(gen)
+        self.assertEqual(str(err.exception), 'Empty list')
+
+    def test_seek(self):
+        with mock.patch('file_filter.open',
+                        mock.mock_open(read_data='some text')):
+            gen = file_filter(self.file, ['text'])
+            self.assertEqual(next(gen), 'some text')
+
+    def test_generator_case(self):
+        str_1 = "This text is very important\n"
+        str_2 = "this TeXt is very imporTant\n"
+        str_3 = "This texting is not important\n"
+        data = str_1 + str_2 + str_3
+        with mock.patch('file_filter.open',
+                        mock.mock_open(read_data=data)):
+            gen = file_filter(self.file, ['text'])
+            self.assertEqual(next(gen), str_1)
+            self.assertEqual(next(gen), str_2)
+            with self.assertRaises(StopIteration):
+                next(gen)
+        gen = file_filter(self.file, ['texts'])
+        with self.assertRaises(StopIteration):
+            next(gen)
+
+    def test_generator_words(self):
+        words = ['type', 'sim']
+        str_1 = 'The Type of object\n'
+        str_2 = 'this SIM is you\n'
+        str_3 = 'type of sim\n'
+        data = str_1 + str_2 + str_3
+        with mock.patch('file_filter.open',
+                        mock.mock_open(read_data=data)):
+            gen = file_filter(self.file, words)
+            self.assertEqual(next(gen), str_1)
+            self.assertEqual(next(gen), str_2)
+            self.assertEqual(next(gen), str_3)
