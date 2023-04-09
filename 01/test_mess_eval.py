@@ -49,3 +49,7 @@ class TestMessEval(TestCase):
 
             self.assertEqual(pmm(self.mess, instance, bad, good), '')
             self.assertEqual(pmm(self.mess, instance, bad, good), '')
+
+            self.assertEqual(instance.predict.call_count, 9)
+            args = [mock.call(self.mess)]*9
+            self.assertEqual(instance.predict.call_args_list, args)

@@ -84,9 +84,9 @@ class TestMessEvalFile(TestCase):
             self.assertEqual(next(gen), str_2)
             with self.assertRaises(StopIteration):
                 next(gen)
-        gen = file_filter(self.file, ['texts'])
-        with self.assertRaises(StopIteration):
-            next(gen)
+            gen = file_filter(self.file, ['texts'])
+            with self.assertRaises(StopIteration):
+                next(gen)
 
     def test_generator_words(self):
         words = ['type', 'sim']
