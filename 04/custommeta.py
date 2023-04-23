@@ -5,6 +5,9 @@ class CustomMeta(type):
     _prefix = 'custom_'
 
     def __setattr__(cls, name, val):
+        if name.startswith('__') and name.endswith('__'):
+            super().__setattr__(name, val)
+            return
         if hasattr(cls, name):
             super().__setattr__(name, val)
             return
