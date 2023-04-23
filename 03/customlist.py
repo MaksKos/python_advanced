@@ -6,8 +6,6 @@ class CustomList(list):
         return super().__str__() + f' sum = {sum(self)}'
 
     def __add__(self, other):
-        if other is None:
-            other = []
         lenght = min(len(self), len(other))
         result = [self[i] + other[i] for i in range(lenght)]
         result.extend(self[lenght:])
@@ -15,8 +13,6 @@ class CustomList(list):
         return CustomList(result)
 
     def __sub__(self, other):
-        if other is None:
-            other = []
         lenght = min(len(self), len(other))
         result = [self[i] - other[i] for i in range(lenght)]
         result.extend(self[lenght:])
@@ -24,13 +20,9 @@ class CustomList(list):
         return CustomList(result)
 
     def __radd__(self, other):
-        if other is None:
-            other = []
         return self.__add__(other)
 
     def __rsub__(self, other):
-        if other is None:
-            other = []
         lenght = min(len(self), len(other))
         result = [other[i] - self[i] for i in range(lenght)]
         result.extend(other[lenght:])
