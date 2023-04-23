@@ -53,6 +53,8 @@ class TestCustomList(TestCase):
         test1 = self.cust + self.list1  # len(cust) >
         test2 = self.cust + self.list2  # len(cust) <
         self.assertEqual(list(self.cust), [-4, 5, 7, 9])
+        self.assertEqual(list(self.list1), [5, 8, -9])
+        self.assertEqual(list(self.list2), [0, 6, -3, 7, 3, 8])
         self.assertIsInstance(test1, CustomList)
         self.assertEqual(list(test1), [1, 13, -2, 9])
         self.assertEqual(list(test2), [-4, 11, 4, 16, 3, 8])
@@ -62,6 +64,8 @@ class TestCustomList(TestCase):
         test1 = self.list1 + self.cust  # len(a) >
         test2 = self.list2 + self.cust  # len(a) <
         self.assertEqual(list(self.cust), [-4, 5, 7, 9])
+        self.assertEqual(list(self.list1), [5, 8, -9])
+        self.assertEqual(list(self.list2), [0, 6, -3, 7, 3, 8])
         self.assertIsInstance(test1, CustomList)
         self.assertEqual(list(test1), [1, 13, -2, 9])
         self.assertEqual(list(test2), [-4, 11, 4, 16, 3, 8])
@@ -80,6 +84,8 @@ class TestCustomList(TestCase):
         test1 = self.cust - self.list1
         test2 = self.cust - self.list2
         self.assertEqual(list(self.cust), [-4, 5, 7, 9])
+        self.assertEqual(list(self.list1), [5, 8, -9])
+        self.assertEqual(list(self.list2), [0, 6, -3, 7, 3, 8])
         self.assertIsInstance(test1, CustomList)
         self.assertEqual(list(test1), [-9, -3, 16, 9])
         self.assertEqual(list(test2), [-4, -1, 10, 2, -3, -8])
@@ -89,6 +95,8 @@ class TestCustomList(TestCase):
         test1 = self.list1 - self.cust
         test2 = self.list2 - self.cust
         self.assertEqual(list(self.cust), [-4, 5, 7, 9])
+        self.assertEqual(list(self.list1), [5, 8, -9])
+        self.assertEqual(list(self.list2), [0, 6, -3, 7, 3, 8])
         self.assertIsInstance(test1, CustomList)
         self.assertEqual(list(test1), [9, 3, -16, -9])
         self.assertEqual(list(test2), [4, 1, -10, -2, 3, 8])
