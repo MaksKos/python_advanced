@@ -55,14 +55,14 @@ class Master(threading.Thread):
         super().__init__()
     
     def run(self) -> None:
-        server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_sock.bind((HOST, PORT))
-        server_sock.listen(5)
-        while self._is_run:
-            client_sock, addr = server_sock.accept()
-            print("client connected", addr)
-            self.q.put(client_sock)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
+            server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_sock.bind((HOST, PORT))
+            server_sock.listen(5)
+            while self._is_run:
+                client_sock, addr = server_sock.accept()
+                print("client connected", addr)
+                self.q.put(client_sock)
 
 
 def main(workers: int, n_top: int):
