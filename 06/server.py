@@ -4,10 +4,10 @@ import socket
 import argparse
 import threading
 import queue
-import requests
 import re
 import json
 import collections
+import requests
 
 HOST = 'localhost'
 PORT = 8080
@@ -28,9 +28,9 @@ class Worker(threading.Thread):
         req = requests.get(url, allow_redirects=False).text
         text = re.sub('<[^>]*>', '', req).split()
         count = collections.Counter(text)
-        to_json = {key:value for key, value in count.most_common(self.size)}
+        to_json = dict(count.most_common(self.size))
         return json.dumps(to_json)
-    
+
     def run(self) -> None:
         while self._is_run:
             sock = self.q.get()
@@ -53,7 +53,7 @@ class Master(threading.Thread):
         self.q = q
         self._is_run = True
         super().__init__()
-    
+
     def run(self) -> None:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
             server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -66,7 +66,7 @@ class Master(threading.Thread):
 
 
 def main(workers: int, n_top: int):
-    q = queue.Queue()  
+    q = queue.Queue()
     threads = [Worker(q, n_top) for _ in range(workers)]
     threads.append(Master(q))
     for th in threads:
@@ -74,6 +74,7 @@ def main(workers: int, n_top: int):
     for th in threads:
         th.join()
     q.join()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

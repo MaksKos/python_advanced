@@ -8,6 +8,7 @@ HOST = 'localhost'
 PORT = 8080
 SIZE = 4096
 
+
 def thread_socket(file, lock):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -22,20 +23,22 @@ def thread_socket(file, lock):
             data = s.recv(SIZE)
             print(f'{line}: {data.decode()}')
 
+
 def main(n: int, file_name: str):
-    
     with open(file_name) as file:
-        lock = threading.Lock()        
+        lock = threading.Lock()
         threads = [
             threading.Thread(
-            target=thread_socket,
-            args=(file, lock))
-        for _ in range(n)
+                target=thread_socket,
+                args=(file, lock),
+            )
+            for _ in range(n)
         ]
         for th in threads:
             th.start()
         for th in threads:
             th.join()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
