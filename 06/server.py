@@ -18,8 +18,8 @@ class Worker(threading.Thread):
 
     count = 0
 
-    def __init__(self, q, n_top) -> None:
-        self.q = q
+    def __init__(self, que, n_top) -> None:
+        self.que = que
         self.size = n_top
         self._is_run = True
         super().__init__()
@@ -33,24 +33,24 @@ class Worker(threading.Thread):
 
     def run(self) -> None:
         while self._is_run:
-            sock = self.q.get()
-            with sock as s:
+            new_sock = self.que.get()
+            with new_sock as sock:
                 while True:
-                    data = s.recv(4096)
+                    data = sock.recv(4096)
                     if data:
                         res = self.url_stat(data.decode())
-                        s.sendall(res.encode())
+                        sock.sendall(res.encode())
                         self.__class__.count += 1
                         print(f'{self.count} urls have done')
                     else:
-                        self.q.task_done()
+                        self.que.task_done()
                         break
 
 
 class Master(threading.Thread):
 
-    def __init__(self, q) -> None:
-        self.q = q
+    def __init__(self, que) -> None:
+        self.que = que
         self._is_run = True
         super().__init__()
 
@@ -62,18 +62,18 @@ class Master(threading.Thread):
             while self._is_run:
                 client_sock, addr = server_sock.accept()
                 print("client connected", addr)
-                self.q.put(client_sock)
+                self.que.put(client_sock)
 
 
 def main(workers: int, n_top: int):
-    q = queue.Queue()
-    threads = [Worker(q, n_top) for _ in range(workers)]
-    threads.append(Master(q))
-    for th in threads:
-        th.start()
-    for th in threads:
-        th.join()
-    q.join()
+    que = queue.Queue()
+    threads = [Worker(que, n_top) for _ in range(workers)]
+    threads.append(Master(que))
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    que.join()
 
 
 if __name__ == '__main__':

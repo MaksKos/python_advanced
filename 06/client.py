@@ -10,21 +10,21 @@ SIZE = 4096
 
 
 def thread_socket(file, lock):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.connect((HOST, PORT))
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.connect((HOST, PORT))
         while True:
             lock.acquire()
             line = file.readline()
             lock.release()
             if not line:
                 break
-            s.sendall(line.encode())
-            data = s.recv(SIZE)
+            sock.sendall(line.encode())
+            data = sock.recv(SIZE)
             print(f'{line}: {data.decode()}')
 
 
-def main(n: int, file_name: str):
+def main(n_thread: int, file_name: str):
     with open(file_name) as file:
         lock = threading.Lock()
         threads = [
@@ -32,12 +32,12 @@ def main(n: int, file_name: str):
                 target=thread_socket,
                 args=(file, lock),
             )
-            for _ in range(n)
+            for _ in range(n_thread)
         ]
-        for th in threads:
-            th.start()
-        for th in threads:
-            th.join()
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
 
 
 if __name__ == '__main__':
