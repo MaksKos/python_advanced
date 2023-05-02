@@ -118,49 +118,46 @@ class TestNodes(TestCase):
 
 class TestLRU(TestCase):
 
-    def test_set(self):
-        cache = LRUCache(2)
-        cache.set("k1", "val1")
-        self.assertEqual(cache.head.value, 'val1')
-        cache.set("k2", "val2")
-        self.assertEqual(len(cache.cache), 2)
-        self.assertEqual(cache.cache['k1'].value, 'val1')
-        self.assertEqual(cache.cache['k2'].value, 'val2')
-        self.assertEqual(cache.tail.value, 'val1')
-        self.assertEqual(cache.head.value, 'val2')
-
-    def test_set_new_value(self):
-        cache = LRUCache(2)
-        cache.set("k1", "val1")
-        cache.set("k1", "val21")
-        self.assertEqual(len(cache.cache), 1)
-        self.assertEqual(cache.cache['k1'].value, 'val21')
-        self.assertEqual(cache.head.value, 'val21')
-
-    def test_set_update(self):
-        cache = LRUCache(2)
-        cache.set("k1", "val1")
-        cache.set("k2", "val2")
-        self.assertEqual(cache.head.value, 'val2')
-        cache.set("k1", "val1")
-        self.assertEqual(len(cache.cache), 2)
-        self.assertEqual(cache.head.value, 'val1')
-
-    def test_get(self):
+    def test_lru(self):
         cache = LRUCache(2)
         cache.set("k1", "val1")
         cache.set("k2", "val2")
         self.assertIsNone(cache.get("k3"))
-        self.assertEqual(cache.head.value, 'val2')
-        self.assertEqual(cache.get("k2"), 'val2')
-        self.assertEqual(cache.get("k1"), 'val1')
-        self.assertEqual(cache.head.value, 'val1')
+        self.assertEqual(cache.head.key, 'k2')  # addition test
+        self.assertEqual(cache.get("k2"), "val2")
+        self.assertEqual(cache.get("k1"), "val1")
+        self.assertEqual(cache.head.key, 'k1')  # addition test
 
-    def test_limit(self):
-        cache = LRUCache(2)
+        cache.set("k3", "val3")
+        self.assertIsNone(cache.get("k2"))
+        self.assertEqual(cache.get("k3"), "val3")
+        self.assertEqual(cache.get("k1"), "val1")
+
+    def test_lru_single(self):
+        cache = LRUCache(1)
+        cache.set("k1", "val1")
+        self.assertEqual(cache.get("k1"), "val1")
+
+        cache.set("k2", "val2")
+        self.assertIsNone(cache.get("k1"))
+        self.assertEqual(cache.get("k2"), "val2")
+
+    def test_lru_update(self):
+        cache = LRUCache(3)
         cache.set("k1", "val1")
         cache.set("k2", "val2")
+        cache.set("k1", "new_val1")  # update
+        self.assertEqual(len(cache.cache), 2)  # addition test
+        self.assertEqual(cache.head.key, "k1")  # addition test
         cache.set("k3", "val3")
+        cache.set("k4", "val4")
+        self.assertIsNone(cache.get("k2"))
+        self.assertEqual(cache.get("k1"), "new_val1")
+        self.assertEqual(cache.get("k3"), "val3")
+        self.assertEqual(cache.get("k4"), "val4")
+
+    def test_none(self):
+        cache = LRUCache(2)
+        cache.set("k1", None)
         self.assertIsNone(cache.get("k1"))
-        self.assertEqual(cache.get("k2"), 'val2')
-        self.assertEqual(cache.get("k3"), 'val3')
+        self.assertIsNotNone(cache.cache['k1'])  # node instance
