@@ -85,6 +85,13 @@ class TestCustomList(TestCase):
         with self.assertRaises(AttributeError):
             inst.dynamic
 
+    def test_instance_dynamic_magic(self):
+        inst = self.TestClass()
+        inst.__add__ = DEFAUL_TEST
+        self.assertEqual(inst.__add__, DEFAUL_TEST)
+        with self.assertRaises(AttributeError):
+            inst.custom___add__
+
     def test_instance_name_like_prefix(self):
         inst = self.TestClass()
         inst.custom_ = DEFAUL_TEST

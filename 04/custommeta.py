@@ -18,6 +18,9 @@ class CustomMeta(type):
         if hasattr(obj, name):
             obj.__dict__[name] = value
             return
+        if name.startswith('__') and name.endswith('__'):
+            obj.__dict__[name] = value
+            return
         obj.__dict__[CustomMeta._prefix+name] = value
 
     def __new__(mcs, name, bases, classdict):
