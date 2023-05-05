@@ -156,8 +156,8 @@ class TestLRU(TestCase):
         self.assertEqual(cache.get("k3"), "val3")
         self.assertEqual(cache.get("k4"), "val4")
 
-    def test_none(self):
+    def test_none_value(self):
         cache = LRUCache(2)
         cache.set("k1", None)
         self.assertIsNone(cache.get("k1"))
-        self.assertIsNotNone(cache.cache['k1'])  # node instance
+        self.assertIsInstance(cache.cache['k1'], Node)  # node instance
