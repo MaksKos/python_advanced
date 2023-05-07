@@ -2,12 +2,12 @@
 
 import time
 import weakref as wr
-import cProfile, pstats, io
+#import cProfile, pstats
 from memory_profiler import profile
 from classe import GameAccount, GameAccountSlot, GameAccountWeak
 
-# Для cProfile закомментирвать @profile
-# Для memory_profile закомментирвать все связанное с cProfile
+#  Для cProfile закомментирвать @profile
+#  Для memory_profile закомментирвать все связанное с cProfile
 
 DEFAULT_GAME = {"GTA", "CS", "BF4"}
 GAMES = {'Empire', 'SimCity'}
@@ -29,11 +29,12 @@ def another_function():
     return 6
 
 
-# @profile
+@profile
 def run_ordinary(n):
 
     t_start = time.time()
-    accounts = [GameAccount(NAME, i, function, DEFAULT_GAME) for i in range(n)]
+    accounts = [GameAccount(NAME, i, function, DEFAULT_GAME)
+                for i in range(n)]
     t_stop = time.time()
     print(f'\t Create time: {t_stop-t_start}')
 
@@ -56,11 +57,12 @@ def run_ordinary(n):
     print(f'\t Write  time: {t_stop-t_start}')
 
 
-# @profile
+@profile
 def run_slots(n):
 
     t_start = time.time()
-    accounts = [GameAccountSlot(NAME, i, function, DEFAULT_GAME) for i in range(n)]
+    accounts = [GameAccountSlot(NAME, i, function, DEFAULT_GAME)
+                for i in range(n)]
     t_stop = time.time()
     print(f'\t Create time: {t_stop-t_start}')
 
@@ -83,11 +85,12 @@ def run_slots(n):
     print(f'\t Write  time: {t_stop-t_start}')
 
 
-# @profile
+@profile
 def run_weak(n):
 
     t_start = time.time()
-    accounts = [GameAccountWeak(NAME, i, function, DEFAULT_GAME) for i in range(n)]
+    accounts = [GameAccountWeak(NAME, i, function, DEFAULT_GAME)
+                for i in range(n)]
     t_stop = time.time()
     print(f'\t Create time: {t_stop-t_start}')
 
@@ -112,8 +115,8 @@ def run_weak(n):
 
 if __name__ == "__main__":
 
-    pr = cProfile.Profile()
-    pr.enable()
+    #pr = cProfile.Profile()
+    #pr.enable()
 
     print(f'Toatal instance for each class: {NUM_INST}')
 
@@ -126,10 +129,8 @@ if __name__ == "__main__":
     print(f"\nCASE 3: weakref class <{GameAccountWeak.__name__}>\n")
     run_weak(NUM_INST)
 
-    pr.disable()
+    #pr.disable()
 
-    s = io.StringIO()
-    sortby = "cumulative"
-    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-    ps.print_stats()
-    print(s.getvalue())
+    #sortby = "cumulative"
+    #ps = pstats.Stats(pr).sort_stats(sortby)
+    #ps.print_stats()
