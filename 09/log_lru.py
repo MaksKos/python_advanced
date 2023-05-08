@@ -3,7 +3,7 @@
 import logging
 import argparse
 
-loglru = logging.getLogger('lrulog')
+loglru = logging.getLogger('loglru')
 
 format_file = logging.Formatter("%(asctime)s\t%(levelname)s\t[file]\t%(message)s",
                                 "%Y %b %d, %H:%M:%S")
