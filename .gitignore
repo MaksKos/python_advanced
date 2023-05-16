@@ -130,3 +130,5 @@ dmypy.json
 
 #local
 Examples.ipynb
+/08/result.txt
+/.vscode/
