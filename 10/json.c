@@ -9,13 +9,13 @@ static PyObject *method_dumps(PyObject *self, PyObject *args);
 int _check_dict(PyObject *dict, size_t *lenght);
 int _make_string(PyObject *dict, char *json);
 // for loads
-int _parser(const char *string, PyObject *dict);
-size_t _miss_whitespace(const char *string, size_t i);
-size_t _get_key(const char *string, PyObject **key, size_t i);
-size_t _get_value (const char *string, PyObject **value, size_t i);
-size_t _get_str_len(const char *string, size_t i);
-PyObject *_get_py_str(const char *string, size_t start, size_t end);
-PyObject * _get_py_num(const char *string, size_t *i);
+int _parser(char *string, PyObject *dict);
+char *_miss_whitespace(char *cursor);
+char *_get_key(char **cursor, PyObject **key);
+char *_get_value(char **cursor, PyObject **value);
+int _get_str_len(char *cursor, size_t *lenght);
+PyObject *_get_py_str(char **cursor, size_t len);
+PyObject * _get_py_num(char **cursor);
 
 static PyMethodDef JsonMethods[] = {
     {"loads", method_loads, METH_VARARGS, "cjson load method: str"},
@@ -37,7 +37,7 @@ PyMODINIT_FUNC PyInit_cjson(void) {
 
 static PyObject *method_loads(PyObject *self, PyObject *args) {
     
-    const char *json_str = NULL;
+    char *json_str = NULL;
     PyObject *dict = NULL;
     size_t str_len = 0;
 
@@ -60,8 +60,8 @@ static PyObject *method_loads(PyObject *self, PyObject *args) {
         return NULL;
     }
 
-    if(!_parser(json_str, dict)){
-        printf("ERROR: Failed to parsing\n");
+    if(!_parser(json_str, dict)) {
+        PyErr_Format(PyExc_TypeError, "Expected object isn't JSON");
         return NULL;
     }
     return dict;
@@ -115,14 +115,13 @@ int _check_dict(PyObject *dict, size_t *lenght){
 
     while (PyDict_Next(dict, &pos, &key, &value)) {
 
-        if (!PyObject_IsInstance(key, &PyUnicode_Type)) {
+        if (!PyUnicode_Check(key)) {
             PyErr_Format(PyExc_TypeError, "dict's key isn't string");
             return 0;
         }
-        if(
-            !(PyObject_IsInstance(value, &PyUnicode_Type) ||
-            PyObject_IsInstance(value, &PyFloat_Type) ||
-            PyObject_IsInstance(value, &PyLong_Type))
+        if(!(PyUnicode_Check(value) ||
+            PyFloat_Check(value) ||
+            PyLong_Check(value))
             ) {
             PyErr_Format(PyExc_TypeError, "dict's val isn't <str>, <int> or <float>");
             return 0;
@@ -149,7 +148,10 @@ int _make_string(PyObject *dict, char *json){
     while (PyDict_Next(dict, &pos, &key, &value)) {
 
         key_str = PyUnicode_AsUTF8(key);
-        value_str = PyUnicode_AsUTF8(PyObject_Repr(value));
+        if(PyUnicode_Check(value))
+            value_str = PyUnicode_AsUTF8(value);
+        else
+            value_str = PyUnicode_AsUTF8(PyObject_Repr(value));
         
         if (pos > 1)
             strcat(json, ", ");
@@ -157,37 +159,47 @@ int _make_string(PyObject *dict, char *json){
         strcat(json, key_str);
         strcat(json, "\"");
         strcat(json, ": ");
-        strcat(json, value_str);
+        if(PyUnicode_Check(value)){
+            strcat(json, "\"");
+            strcat(json, value_str);
+            strcat(json, "\"");
+        }
+        else
+            strcat(json, value_str);
 
     }
     strcat(json, "}");
     return 1;
 }
 
-int _parser(const char *string, PyObject *dict) {
+int _parser(char *string, PyObject *dict) {
 
     PyObject *key = NULL;
     PyObject *value = NULL;
+    char *cursor = string;
 
-    for (size_t i = 0; i < strlen(string);) {
+    while (cursor != string + strlen(string)) {
         // delete whitespaces
-        i = _miss_whitespace(string, i);
+        cursor = _miss_whitespace(cursor);
         // check separator
-        if (string[i] == '}')
+        if (*cursor == '}')
             break;
-        if (string[i] == '{' || string[i] == ',') {
-
-            // try to get key
-            i = _get_key(string, &key, i+1);
-            if (i == -1) {
+        if (*cursor == '{' || *cursor == ',') {
+            cursor++;
+            // if empty JSON
+            cursor = _miss_whitespace(cursor);
+            if (*cursor == '}')
+                break;
+            // try to get key;
+            if (_get_key(&cursor, &key) == NULL) {
                 printf("ERROR: incorrect key\n");
                 return 0;
             }
-            i = _miss_whitespace(string, i);
+            cursor = _miss_whitespace(cursor);
             // try to get value
-            if (string[i] == ':') {
-            i = _get_value(string, &value, i+1);
-                if (i == -1) {
+            if (*cursor == ':') {
+                cursor++;
+                if (_get_value(&cursor, &value) == NULL) {
                     printf("ERROR: incorrect value\n");
                     return 0;
                 }
@@ -211,91 +223,87 @@ int _parser(const char *string, PyObject *dict) {
     return 1;
 }
 
-size_t _miss_whitespace(const char *string, size_t i) {
-    
-    while (isspace(string[i]))
-        i++;
-    return i;
+char* _miss_whitespace(char *cursor) {  
+    while (isspace(*cursor))
+        cursor++;
+    return cursor;
 }
 
-size_t _get_key(const char *string, PyObject **key, size_t i) {
-
-    size_t key_len, index;
-    char *key_str;
-
-    i = _miss_whitespace(string, i);
-    if (string[i] != '"')
-        return -1;
-    i++; index = i; 
-
-    i = _get_str_len(string,  i);
-    if (i == -1)
-        return -1;
-    
-    *key = _get_py_str(string, index, i);
-    if (*key == NULL)
-        return -1;
-    return i;
-}
-
-size_t _get_value (const char *string, PyObject **value, size_t i) {
-    
-    size_t index;
-    char *value_str;
-
-    i = _miss_whitespace(string, i);
-    if (string[i] == '"'){
-        i++; index = i;
-
-        i = _get_str_len(string,  i);
-        if (i == -1)
-            return -1;
-    
-        *value = _get_py_str(string, index, i);
-        if (*value == NULL)
-            return -1;
-        return i;
-    }
-    if (isdigit(string[i])){
-        *value = _get_py_num(string, &i);
-        if (*value == NULL)
-            return -1;
-        return ++i;
-    }
-
-    return -1;
-}
-
-size_t _get_str_len(const char *string, size_t i){
+char* _get_key(char **cursor, PyObject **key) {
 
     size_t len;
-
-    while (i < strlen(string)) {
-
-        len = strcspn(&string[i], "\"");
-
-        if (len == strlen(&string[i])){
-            printf("ERROR: Failed to get string\n");
-            return -1;
-        }
-        if (string[i+len-1] != '\\'){
-            i += len+1;
-            break;
-        }
-        i += len+1;
-
-    }
-    return i;
+    
+    *cursor = _miss_whitespace(*cursor);
+    if (**cursor != '"')
+        return NULL;
+    (*cursor)++;
+    if (!_get_str_len(*cursor, &len))
+        return NULL;
+    *key = _get_py_str(cursor, len);
+    if (*key == NULL)
+        return NULL;
+    (*cursor) += len+1;
+    return *cursor;
 }
 
-PyObject *_get_py_str(const char *string, size_t start, size_t end){
+char* _get_value (char **cursor, PyObject **value) {
+    
+    size_t len;
+
+    *cursor = _miss_whitespace(*cursor);
+    if (**cursor == '"'){
+        (*cursor)++;
+        if (!_get_str_len(*cursor, &len))
+            return NULL;
+        *value = _get_py_str(cursor, len);
+        if (*value == NULL)
+            return NULL;
+        (*cursor) += len+1;
+        return *cursor;
+    }
+    if (isdigit(**cursor)){
+        *value = _get_py_num(cursor);
+        if (*value == NULL)
+            return NULL;
+        return *cursor;
+    }
+
+    return NULL;
+}
+
+int _get_str_len(char *cursor, size_t *lenght){
+
+    size_t len = 0, sum = 0;
+    char *start = cursor;
+
+    while (len  < strlen(cursor)) {
+        
+        len = strcspn(start, "\"");
+
+        if (len == strlen(start)){
+            printf("ERROR: Failed to get string\n");
+            return 0;
+        }
+        if (start[len-1] != '\\'){
+            sum += len;
+            break;
+        }
+        len++;
+        sum += len;
+        start += len;
+    }
+    *lenght = sum;
+    return 1;
+}
+
+PyObject *_get_py_str(char **cursor, size_t len){
 
     char *new_str;
     PyObject *py_str;
 
-    new_str = (char *)calloc(sizeof(char), end-start-1);
-    strncpy(new_str, &string[start], end-start-1);
-    printf("Value: %s \n", new_str);
+    new_str = (char *)calloc(sizeof(char), len);
+    strncpy(new_str, *cursor, len);
+    //printf("Value: %s \n", new_str);
 
     // Build python string
     if (!(py_str = Py_BuildValue("s", new_str))) {
@@ -306,28 +314,43 @@ PyObject *_get_py_str(const char *string, size_t start, size_t end){
     return py_str;
 }
 
-PyObject * _get_py_num(const char *string, size_t *i) {
+PyObject * _get_py_num(char **cursor) {
 
     char *counter = NULL;
-    double val_1;
-    long int val_2;
+    double val_float;
+    long int val_int;
     PyObject *value;
 
-    val_1 = strtod(&string[*i], &counter);
-    if (counter != NULL){
-        //make float obj
-    }
-
-    val_2 = strtol(&string[*i], &counter, 10);
+    val_int = strtol(*cursor, &counter, 0);
     if (counter == NULL){
-        printf("ERROR: Failed to get number\n");
+        printf("ERROR: Failed to get number (int)\n");
         return NULL;
     }
+    if (*counter != '.')
+    {      
+        if (!(value = Py_BuildValue("i", val_int))) {
+            printf("ERROR: Failed to build integer value\n");
+            return NULL;
+        }
 
-    if (!(value = Py_BuildValue("i", 10))) {
-        printf("ERROR: Failed to build integer value\n");
+        *cursor = counter;
+        return value;
+    }
+    
+    val_float = strtod(*cursor, &counter);
+    if (counter == NULL){
+        printf("ERROR: Failed to get number (float)\n");
         return NULL;
     }
-    *i = 0;
-    return value;
+    if (*counter != '.')
+    {      
+        if (!(value = Py_BuildValue("d", val_float))) {
+            printf("ERROR: Failed to build float value\n");
+            return NULL;
+        }
+        *cursor = counter;
+        return value;
+    }
+    printf("ERROR: no number");
+    return NULL;
 }
