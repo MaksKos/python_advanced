@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include <Python.h>
 
 static PyObject *method_loads(PyObject *self, PyObject *args);
@@ -119,15 +120,21 @@ int _check_dict(PyObject *dict, size_t *lenght){
             PyErr_Format(PyExc_TypeError, "dict's key isn't string");
             return 0;
         }
-        if(!(PyUnicode_Check(value) ||
-            PyFloat_Check(value) ||
-            PyLong_Check(value))
-            ) {
+        if (PyUnicode_Check(value)){
+            len += PyUnicode_GET_LENGTH(value) + 2;
+        }
+        else if (PyFloat_Check(value)) {
+            len += PyUnicode_GET_LENGTH(PyObject_Repr(value)) + 2;
+        }
+        else if (PyLong_Check(value)) {
+            len += floor(log10(abs(PyLong_AsLong(value)))) + 1;
+        }
+        else {
             PyErr_Format(PyExc_TypeError, "dict's val isn't <str>, <int> or <float>");
             return 0;
         }     
-        len += strlen(PyUnicode_AsUTF8(PyObject_Repr(key)));
-        len += strlen(PyUnicode_AsUTF8(PyObject_Repr(value)));
+        len += PyUnicode_GET_LENGTH(key)+2;
+        //len += PyUnicode_GET_LENGTH(PyObject_Repr(value))+2;
 
     }
     *lenght = len;
@@ -138,37 +145,49 @@ int _make_string(PyObject *dict, char *json){
 
     PyObject *key, *value;
     Py_ssize_t pos = 0;
+    Py_ssize_t len_key = 0, len_val = 0;
     const char *key_str, *value_str;
-    
+    char* count = json;
+
     if (json == NULL || dict == NULL)
         return 0;
     
-    strcat(json, "{");
-
+    memcpy(count, "{", 1);
+    count++;
     while (PyDict_Next(dict, &pos, &key, &value)) {
 
-        key_str = PyUnicode_AsUTF8(key);
+        key_str = PyUnicode_AsUTF8AndSize(key, &len_key);
         if(PyUnicode_Check(value))
-            value_str = PyUnicode_AsUTF8(value);
+            value_str = PyUnicode_AsUTF8AndSize(value, &len_val);
         else
-            value_str = PyUnicode_AsUTF8(PyObject_Repr(value));
+            value_str = PyUnicode_AsUTF8AndSize(PyObject_Repr(value), &len_val);
         
-        if (pos > 1)
-            strcat(json, ", ");
-        strcat(json, "\"");
-        strcat(json, key_str);
-        strcat(json, "\"");
-        strcat(json, ": ");
-        if(PyUnicode_Check(value)){
-            strcat(json, "\"");
-            strcat(json, value_str);
-            strcat(json, "\"");
+        if (pos > 1){
+            memcpy(count, ", ", 2);
+            count += 2;
         }
-        else
-            strcat(json, value_str);
-
+        memcpy(count, "\"", 1);
+        count++;
+        memcpy(count, key_str, len_key);
+        count += len_key;
+        memcpy(count, "\"", 1);
+        count ++;
+        memcpy(count, ": ", 2);
+        count += 2;
+        if(PyUnicode_Check(value)){
+            memcpy(count, "\"", 1);
+            count++;
+            memcpy(count, value_str, len_val);
+            count += len_val;
+            memcpy(count, "\"", 1);
+            count++;
+        }
+        else{
+           memcpy(count, value_str, len_val);
+           count += len_val;
+        }
     }
-    strcat(json, "}");
+    memcpy(count, "}", 1);
     return 1;
 }
 
@@ -178,12 +197,9 @@ int _parser(char *string, PyObject *dict) {
     PyObject *value = NULL;
     char *cursor = string;
 
-    while (cursor != string + strlen(string)) {
+    while (*cursor != '}') {
         // delete whitespaces
         cursor = _miss_whitespace(cursor);
-        // check separator
-        if (*cursor == '}')
-            break;
         if (*cursor == '{' || *cursor == ',') {
             cursor++;
             // if empty JSON
@@ -276,14 +292,14 @@ int _get_str_len(char *cursor, size_t *lenght){
     size_t len = 0, sum = 0;
     char *start = cursor;
 
-    while (len  < strlen(cursor)) {
+    while (*start != '}') {
         
         len = strcspn(start, "\"");
 
-        if (len == strlen(start)){
-            printf("ERROR: Failed to get string\n");
-            return 0;
-        }
+        //if (len == strlen(start)){
+        //    printf("ERROR: Failed to get string\n");
+        //    return 0;
+        //}
         if (start[len-1] != '\\'){
             sum += len;
             break;
