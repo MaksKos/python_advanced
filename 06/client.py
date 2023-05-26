@@ -19,8 +19,14 @@ def thread_socket(file, lock):
             lock.release()
             if not line:
                 break
-            sock.sendall(line.encode())
-            data = sock.recv(SIZE)
+            
+            try:
+                sock.sendall(line.encode())
+                data = sock.recv(SIZE)
+            except socket.error as err:
+                print(err.strerror)
+                continue
+
             print(f'{line}: {data.decode()}')
 
 

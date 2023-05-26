@@ -18,9 +18,10 @@ class Worker(threading.Thread):
 
     count = 0
 
-    def __init__(self, que, n_top) -> None:
+    def __init__(self, que, n_top, lock) -> None:
         self.que = que
         self.size = n_top
+        self.lock = lock
         self._is_run = True
         super().__init__()
 
@@ -35,16 +36,30 @@ class Worker(threading.Thread):
         while self._is_run:
             new_sock = self.que.get()
             with new_sock as sock:
-                while True:
-                    data = sock.recv(4096)
-                    if data:
-                        res = self.url_stat(data.decode())
-                        sock.sendall(res.encode())
-                        self.__class__.count += 1
-                        print(f'{self.count} urls have done')
-                    else:
-                        self.que.task_done()
-                        break
+                try:
+                    while True:
+                        data = sock.recv(4096)
+                        if data:
+                            try:
+                                res = self.url_stat(data.decode())
+                            except requests.exceptions.RequestException as req_err: 
+                                print(req_err)
+                                sock.sendall("URL errro".encode())
+                                continue
+
+                            sock.sendall(res.encode())
+
+                            self.lock.acquire()
+                            self.__class__.count += 1
+                            print(f'{self.count} urls have done')
+                            self.lock.release()
+                        else:
+                            self.que.task_done()
+                            break
+                        
+                except socket.error as error:
+                    print(error.strerror)
+                    continue
 
 
 class Master(threading.Thread):
@@ -60,14 +75,19 @@ class Master(threading.Thread):
             server_sock.bind((HOST, PORT))
             server_sock.listen(5)
             while self._is_run:
-                client_sock, addr = server_sock.accept()
+                try:
+                    client_sock, addr = server_sock.accept()
+                except socket.error as error:
+                    print(error.strerror)
+                    continue
                 print("client connected", addr)
                 self.que.put(client_sock)
 
 
 def main(workers: int, n_top: int):
     que = queue.Queue()
-    threads = [Worker(que, n_top) for _ in range(workers)]
+    lock = threading.Lock()
+    threads = [Worker(que, n_top, lock) for _ in range(workers)]
     threads.append(Master(que))
     for thread in threads:
         thread.start()
