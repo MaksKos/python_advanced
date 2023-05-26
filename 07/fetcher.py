@@ -22,6 +22,9 @@ async def async_worker(queue):
         url = await queue.get()
         try:
             await fetch_url(url)
+        except aiohttp.ClientError as error:
+            print(error)
+            continue
         finally:
             queue.task_done()
 
